@@ -1,11 +1,4 @@
-// POST localhost:3000/api/demo/background
-import { inngest } from "@/inngest/client";
+import { Inngest } from "inngest";
 
-export async function POST() {
-  await inngest.send({ 
-    name: "demo/generate",
-    data: {},
-   });
-
-  return Response.json({ status: "started" });
-};
+// Create a client to send and receive events
+export const inngest = new Inngest({ id: "polaris" });
