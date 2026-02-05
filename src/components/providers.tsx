@@ -27,7 +27,8 @@ export const Providers = ({ children }: { children: React.ReactNode }) => {
           disableTransitionOnChange
         >
           <Authenticated>
-            <UserButton/>
+            <UserButton />
+            {children}
           </Authenticated>
           <Unauthenticated>
             <UnauthenticatedView />
@@ -35,7 +36,6 @@ export const Providers = ({ children }: { children: React.ReactNode }) => {
           <AuthLoading>
             <AuthLoadingView />
           </AuthLoading>
-        
         </ThemeProvider>
       </ConvexProviderWithClerk>
     </ClerkProvider>
