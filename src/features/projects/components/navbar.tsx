@@ -1,157 +1,139 @@
 "use client";
 
-import Link from "next/link";
-import Image from "next/image";
-import { useState } from "react";
-import { CloudCheckIcon, LoaderIcon } from "lucide-react";
-import { UserButton } from "@clerk/nextjs";
 import { Poppins } from "next/font/google";
-import { formatDistanceToNow } from "date-fns";
+import { SparkleIcon } from "lucide-react";
+import { FaGithub } from "react-icons/fa";
+import {
+  adjectives,
+  animals,
+  colors,
+  uniqueNamesGenerator,
+} from "unique-names-generator";
+import { useEffect, useState } from "react";
 
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Kbd } from "@/components/ui/kbd";
 
-import { Id } from "../../../../convex/_generated/dataModel";
-import { useProject, useRenameProject } from "../hooks/use-projects";
+import { ProjectsList } from "./projects-list";
+import { useCreateProject } from "../hooks/use-projects";
+import { ProjectsCommandDialog } from "./projects-command-dialog";
+import { ImportGithubDialog } from "./import-github-dialog";
 
 const font = Poppins({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
 })
 
-export const Navbar = ({
-  projectId
-}: {
-  projectId: Id<"projects">;
-}) => {
-  const project = useProject(projectId);
-  const renameProject = useRenameProject(projectId);
+export const ProjectsView = () => {
+  const createProject = useCreateProject();
 
-  const [isRenaming, setIsRenaming] = useState(false);
-  const [name, setName] = useState("");
+  const [commandDialogOpen, setCommandDialogOpen] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
 
-  const handleStartRename = () => {
-    if (!project) return;
-    setName(project.name);
-    setIsRenaming(true);
-  };
-
-  const handleSubmit = () => {
-    if (!project) return;
-    setIsRenaming(false);
-
-    const trimmedName = name.trim();
-    if (!trimmedName || trimmedName === project.name) return;
-
-    renameProject({ id: projectId, name: trimmedName });
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      handleSubmit();
-    } else if (e.key === "Escape") {
-      setIsRenaming(false);
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey) {
+        if (e.key === "k") {
+          e.preventDefault();
+          setCommandDialogOpen(true);
+        }
+        if (e.key === "i") {
+          e.preventDefault();
+          setImportDialogOpen(true);
+        }
+      }
     }
-  };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   return (
-    <nav className="flex justify-between items-center gap-x-2 p-2 bg-sidebar border-b">
-      <div className="flex items-center gap-x-2">
-        <Breadcrumb>
-          <BreadcrumbList className="gap-0!">
-            <BreadcrumbItem>
-              <BreadcrumbLink
-                className="flex items-center gap-1.5"
-                asChild
+    <>
+      <ProjectsCommandDialog
+        open={commandDialogOpen}
+        onOpenChange={setCommandDialogOpen}
+      />
+      <ImportGithubDialog
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
+      />
+      <div className="min-h-screen bg-sidebar flex flex-col items-center justify-center p-6 md:p-16">
+        <div className="w-full max-w-sm mx-auto flex flex-col gap-4 items-center">
+
+          <div className="flex justify-between gap-4 w-full items-center">
+
+            <div className="flex items-center gap-2 w-full group/logo">
+              <img src="/logo.svg" alt="Polaris" className="size-[32px] md:size-[46px]" />
+              <h1 className={cn(
+                "text-4xl md:text-5xl font-semibold",
+                font.className,
+              )}>
+                Polaris
+              </h1>
+            </div>
+
+          </div>
+
+          <div className="flex flex-col gap-4 w-full">
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  const projectName = uniqueNamesGenerator({
+                    dictionaries: [
+                      adjectives,
+                      animals,
+                      colors,
+                    ],
+                    separator: "-",
+                    length: 3,
+                  });
+
+                  createProject({
+                    name: projectName,
+                  });
+                }}
+                className="h-full items-start justify-start p-4 bg-background border flex flex-col gap-6 rounded-none"
               >
-                <Button
-                  variant="ghost"
-                  className="w-fit! p-1.5! h-7!"
-                  asChild
-                >
-                  <Link href="/">
-                    <Image
-                      src="/logo.svg"
-                      alt="Logo"
-                      width={20}
-                      height={20}
-                    />
-                    <span
-                      className={cn(
-                        "text-sm font-medium",
-                        font.className,
-                      )}
-                    >
-                      Polaris
-                    </span>
-                  </Link>
-                </Button>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator className="ml-0! mr-1" />
-            <BreadcrumbItem>
-              {isRenaming ? (
-                <input
-                  autoFocus
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  onFocus={(e) => e.currentTarget.select()}
-                  onBlur={handleSubmit}
-                  onKeyDown={handleKeyDown}
-                  className="text-sm bg-transparent text-foreground outline-none focus:ring-1 focus:ring-inset focus:ring-ring font-medium max-w-40 truncate"
-                />
-              ) : (
-                <BreadcrumbPage
-                  onClick={handleStartRename}
-                  className="text-sm cursor-pointer hover:text-primary font-medium max-w-40 truncate"
-                >
-                  {project?.name ?? "Loading..."}
-                </BreadcrumbPage>
-              )}
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-        {project?.importStatus === "importing" ? (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <LoaderIcon className="size-4 text-muted-foreground animate-spin" />
-            </TooltipTrigger>
-            <TooltipContent>Importing...</TooltipContent>
-          </Tooltip>
-        ) : (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <CloudCheckIcon className="size-4 text-muted-foreground" />
-            </TooltipTrigger>
-            <TooltipContent>
-              Saved{" "}
-              {project?.updatedAt 
-                ? formatDistanceToNow(
-                  project.updatedAt,
-                  { addSuffix: true, }
-                )
-                : "Loading..."}
-            </TooltipContent>
-          </Tooltip>
-        )}
+                <div className="flex items-center justify-between w-full">
+                  <SparkleIcon className="size-4" />
+                  <Kbd className="bg-accent border">
+                    ⌘J
+                  </Kbd>
+                </div>
+                <div>
+                  <span className="text-sm">
+                    New
+                  </span>
+                </div>
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setImportDialogOpen(true)}
+                className="h-full items-start justify-start p-4 bg-background border flex flex-col gap-6 rounded-none"
+              >
+                <div className="flex items-center justify-between w-full">
+                  <FaGithub className="size-4" />
+                  <Kbd className="bg-accent border">
+                    ⌘I
+                  </Kbd>
+                </div>
+                <div>
+                  <span className="text-sm">
+                    Import
+                  </span>
+                </div>
+              </Button>
+            </div>
+
+            <ProjectsList onViewAll={() => setCommandDialogOpen(true)} />
+
+          </div>
+
+        </div>
       </div>
-      <div className="flex items-center gap-2">
-        <UserButton />
-      </div>
-    </nav>
-  )
+    </>
+  );
 };
