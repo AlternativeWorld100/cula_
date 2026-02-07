@@ -6,7 +6,7 @@ const validateInternalKey = (key: string) => {
   const internalKey = process.env.POLARIS_CONVEX_INTERNAL_KEY;
 
   if (!internalKey) {
-    throw new Error("POLARIS_CONVEX_INTERNAL_KEY is not configured");
+    throw new Error("CULA_CONVEX_INTERNAL_KEY is not configured");
   }
 
   if (key !== internalKey) {
